@@ -13,8 +13,8 @@ class SwerveModule:
         cfg = configs.TalonFXConfiguration()
         cfg.slot0.k_p = 5
         cfg.slot0.k_s = 3
-        cfg.torque_current.peak_forward_torque_current = 28
-        cfg.torque_current.peak_reverse_torque_current = -28
+        cfg.torque_current.peak_forward_torque_current = constants.max_current
+        cfg.torque_current.peak_reverse_torque_current = -constants.max_current
         # Retry config apply up to 5 times, report if failure
         status: StatusCode = StatusCode.STATUS_CODE_NOT_INITIALIZED
         for _ in range(0, 5):
