@@ -12,6 +12,11 @@ class Robot(wpilib.TimedRobot):
         self.swerve.add_module(SwerveModule(4, 1, -1))
     
     def teleopPeriodic(self):
-        self.swerve.set_velocity(self.controller.getRawAxis(0), self.controller.getRawAxis(1), self.controller.getRawAxis(2))
+        # automatically choose the controller
+        if self.controller.getName() == "Controller (Xbox One For Windows)":
+            self.swerve.set_velocity(-self.controller.getRawAxis(1), -self.controller.getRawAxis(0), -self.controller.getRawAxis(4))
+        if self.controller.getName() == "Radiomaster Boxer Joystick":
+            self.swerve.set_velocity(self.controller.getRawAxis(0), self.controller.getRawAxis(1), self.controller.getRawAxis(2))
+
         if self.controller.getRawButton(4):
             self.swerve.gyro.set_yaw(0)
