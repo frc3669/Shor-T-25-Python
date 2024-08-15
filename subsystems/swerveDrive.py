@@ -1,7 +1,7 @@
 from subsystems.swerveModule import SwerveModule
 import constants
 import cmath
-from wpilib import Timer
+from wpilib import Timer, SmartDashboard
 from phoenix6 import hardware
 
 class SwerveDrive:
@@ -17,14 +17,18 @@ class SwerveDrive:
 
     def set_velocity(self, x_velocity: float, y_velocity: float, angular_velocity: float):
         velocity = complex(x_velocity, y_velocity)
+        SmartDashboard.putNumber('velocity_x', velocity.real)
+        SmartDashboard.putNumber('velocity_y', velocity.imag)
         # apply smooth deadband
         dB = 0.03
-        velocity = 0
         if abs(velocity) > dB:
             velocity *= (1 - dB/abs(velocity))/(1 - dB)
-        angular_velocity = 0
+        else:
+            velocity = complex(0, 0)
         if abs(angular_velocity) > dB:
             angular_velocity *= (1 - dB/abs(angular_velocity))/(1 - dB)
+        else:
+            angular_velocity = 0
         # scale the velocities to meters per second
         velocity *= constants.max_m_per_sec
         angular_velocity *= constants.max_m_per_sec
@@ -43,7 +47,9 @@ class SwerveDrive:
         robot_velocity *= constants.max_m_per_sec/highest
         # find the error between the command and the current velocities
         velocity_error = velocity - self.slew_velocity
-        angular_velocity_error = angular_velocity = self.slew_angular_velocity
+        angular_velocity_error = angular_velocity - self.slew_angular_velocity
+        SmartDashboard.putNumber('vel_err_x', velocity_error.real)
+        SmartDashboard.putNumber('vel_err_y', velocity_error.imag)
         # find the robot oriented velocity error
         robot_velocity_error = velocity_error * cmath.rect(1, -self.heading)
         robot_slew_velocity = self.slew_velocity * cmath.rect(1, -self.heading)
@@ -56,6 +62,8 @@ class SwerveDrive:
         # find velocity increments
         velocity_increment = velocity_error/highest
         angular_velocity_increment = angular_velocity_error/highest
+        SmartDashboard.putNumber('vel_inc_x', velocity_increment.real)
+        SmartDashboard.putNumber('vel_inc_y', velocity_increment.imag)
         # increment velocity
         if abs(velocity_error) > constants.max_m_per_sec_per_cycle:
             self.slew_velocity += velocity_increment
@@ -71,6 +79,8 @@ class SwerveDrive:
         robot_accel = robot_velocity_error*2
         angular_accel = angular_velocity_error*2
         # drive the modules
+        SmartDashboard.putNumber('slew_velocity_x', robot_slew_velocity.real)
+        SmartDashboard.putNumber('slew_velocity_y', robot_slew_velocity.imag)
         for module in self.modules:
             module.set_velocity(robot_slew_velocity, self.slew_angular_velocity, robot_accel, angular_accel)
     

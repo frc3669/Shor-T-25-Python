@@ -24,7 +24,9 @@ class SwerveModule:
         if not status.is_ok():
             print(f"Could not apply configs, error code: {status.name}")
         # calculate the turn vector
-        self.turn_vector = complex(module_position_x, module_position_y) * 1j
+        self.turn_vector = complex(module_position_x, module_position_y) * complex(0, 1)
+        if abs(self.turn_vector) != 0:
+            self.turn_vector /= abs(self.turn_vector)
     
     def set_velocity(self, robot_velocity, angular_velocity, robot_accel, angular_accel):
         velocity = self.find_module_vector(robot_velocity, angular_velocity)
@@ -44,7 +46,7 @@ class SwerveModule:
 
         
     def find_module_vector(self, robot_vector, angular_rate):
-        return robot_vector + self.turn_vector * angular_rate
+        return robot_vector + self.turn_vector*angular_rate
     
     def get_accel_overshoot(self, robot_vel, angular_vel, robot_vel_increment, angular_vel_increment):
         velocity = self.find_module_vector(robot_vel, angular_vel)
