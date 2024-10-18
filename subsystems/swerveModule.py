@@ -27,8 +27,9 @@ class SwerveModule:
         self.turn_vector = complex(module_position_x, module_position_y) * complex(0, 1)
         if abs(self.turn_vector) != 0:
             self.turn_vector /= abs(self.turn_vector)
+        self.motor_position_old = 0
     
-    def set_velocity(self, robot_velocity, angular_velocity, robot_accel, angular_accel):
+    def set_velocity(self, robot_velocity: complex = complex(), angular_velocity: float = 0, robot_accel: complex = complex(), angular_accel: float = 0):
         velocity = self.find_module_vector(robot_velocity, angular_velocity)
         accel_current = self.find_module_vector(robot_accel, angular_accel)*constants.current_to_accel_ratio
         wheel_speed = abs(velocity)
@@ -59,3 +60,14 @@ class SwerveModule:
         if wheel_accel_overshoot > accel_overshoot:
             accel_overshoot = wheel_accel_overshoot
         return accel_overshoot
+    
+    def get_position_change(self):
+        self.angle = self.angle_encoder.get_absolute_position().value_as_double * cmath.tau
+        motor_position = self.drive_motor.get_position().value_as_double
+        motor_position_change = motor_position - self.motor_position_old
+        self.motor_position_old = motor_position
+        return cmath.rect(motor_position_change / constants.motor_turns_per_m, self.angle)
+    
+    def reset_encoders(self):
+        self.motor_position_old = 0
+        self.drive_motor.set_position(0)

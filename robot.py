@@ -1,6 +1,7 @@
 import wpilib
 from subsystems.swerveDrive import SwerveDrive
 from subsystems.swerveModule import SwerveModule
+from trajectory import Trajectory
 
 class Robot(wpilib.TimedRobot):
     def robotInit(self):
@@ -10,6 +11,7 @@ class Robot(wpilib.TimedRobot):
         self.swerve.add_module(SwerveModule(2, -1, 1))
         self.swerve.add_module(SwerveModule(3, -1, -1))
         self.swerve.add_module(SwerveModule(4, 1, -1))
+        self.trajectory = Trajectory(wpilib.getDeployDirectory() + "/test.traj")
     
     def teleopPeriodic(self):
         # automatically choose the controller
@@ -20,3 +22,10 @@ class Robot(wpilib.TimedRobot):
 
         if self.controller.getRawButton(4):
             self.swerve.gyro.set_yaw(0)
+    
+    def autonomousInit(self) -> None:
+        self.swerve.setTrajectory(self.trajectory)
+        self.swerve.resetPosition()
+
+    def autonomousPeriodic(self):
+        self.swerve.followTrajectory()

@@ -3,6 +3,8 @@ import constants
 import cmath
 from wpilib import Timer, SmartDashboard
 from phoenix6 import hardware
+from trajectory import Trajectory, Sample
+import mathFunctions
 
 class SwerveDrive:
     def __init__(self):
@@ -14,6 +16,8 @@ class SwerveDrive:
         self.slew_angular_velocity = 0
         self.position = complex()
         self.heading = 0
+        self.trajectory = None
+        self.sample_index = 0
 
     def set_velocity(self, x_velocity: float, y_velocity: float, angular_velocity: float):
         velocity = complex(x_velocity, y_velocity)
@@ -84,5 +88,44 @@ class SwerveDrive:
         for module in self.modules:
             module.set_velocity(robot_slew_velocity, self.slew_angular_velocity, robot_accel, angular_accel)
     
+    def setTrajectory(self, trajectory: Trajectory):
+        self.trajectory = trajectory
+        self.sample_index = 0
+        self.auto_timer.restart()
+        
+    def followTrajectory(self):
+        self.heading = self.gyro.get_yaw().value_as_double*cmath.tau/360
+        # find the latest sample index
+        while self.auto_timer.hasElapsed(self.trajectory.get_sample(self.sample_index).timestamp) and self.sample_index < self.trajectory.get_sample_count():
+            self.sample_index += 1
+        if self.sample_index < self.trajectory.get_sample_count():
+            current_sample = self.trajectory.get_sample(self.sample_index)
+            # calculate the proportional response
+            position_error = current_sample.position - self.position
+            heading_error = current_sample.heading - self.heading
+            heading_error = mathFunctions.get_wrapped(heading_error)
+            velocity = current_sample.velocity + constants.swerve_position_P * position_error
+            angular_velocity = current_sample.angular_velocity + constants.swerve_heading_P * heading_error
+            velocity *= cmath.rect(1, -self.heading)
+            for module in self.modules:
+                module.set_velocity(velocity, angular_velocity)
+        else:
+            for module in self.modules:
+                module.set_velocity()
+
+    def getTrajectoryRemainingTime(self):
+        return self.trajectory.getEndTime() - self.auto_timer.get()
+
+    def calculateOdometry(self):
+        position_change = complex(0, 0)
+        for module in self.modules:
+            position_change += module.getPositionChange()
+        self.position += position_change * cmath.rect(0.25, self.heading)
+
     def add_module(self, module: SwerveModule):
         self.modules.append(module)
+
+    def resetPosition(self, new_position: complex = complex()):
+        for module in self.modules:
+            module.reset_encoders()
+        self.position = new_position
