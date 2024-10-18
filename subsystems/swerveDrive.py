@@ -20,8 +20,7 @@ class SwerveDrive(commands2.Subsystem):
         super().__init__()
 
     def periodic(self):
-        # This method will be called once per scheduler run
-        pass
+        self.calculateOdometry()
     
     def simulationPeriodic(self):
         # This method will be called once per scheduler run during simulation
