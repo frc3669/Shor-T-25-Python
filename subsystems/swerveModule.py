@@ -1,11 +1,11 @@
-import constants
-import mathFunctions
-import cmath
+import constants, mathFunctions
+import cmath, commands2
 from phoenix6 import hardware, controls, configs, StatusCode
 
-class SwerveModule:
+class SwerveModule(commands2.Subsystem):
     # create a swerve module at the given position relative to the center of the robot
     def __init__(self, moduleID: int, module_position_x: float, module_position_y: float):
+        super().__init__()
         self.drive_motor = hardware.TalonFX(10 + moduleID, "CTREdevices")
         self.steering_motor = hardware.TalonFX(20 + moduleID, "CTREdevices")
         self.angle_encoder = hardware.CANcoder(30 + moduleID, "CTREdevices")
@@ -28,6 +28,14 @@ class SwerveModule:
         if abs(self.turn_vector) != 0:
             self.turn_vector /= abs(self.turn_vector)
         self.motor_position_old = 0
+        self.position_change = 0
+
+    def periodic(self):
+        self.angle = self.angle_encoder.get_absolute_position().value_as_double * cmath.tau
+        motor_position = self.drive_motor.get_position().value_as_double
+        motor_position_change = motor_position - self.motor_position_old
+        self.motor_position_old = motor_position
+        self.position_change = cmath.rect(motor_position_change / constants.motor_turns_per_m, self.angle)
     
     def set_velocity(self, robot_velocity: complex = complex(), angular_velocity: float = 0, robot_accel: complex = complex(), angular_accel: float = 0):
         velocity = self.find_module_vector(robot_velocity, angular_velocity)
@@ -44,7 +52,6 @@ class SwerveModule:
         # use torque/velocity to set the drive motor velocity
         wheel_accel_current = mathFunctions.get_projection_magnitude(accel_current, cmath.rect(1, self.angle))
         self.drive_motor.set_control(self.velocity_ctrl.with_velocity(wheel_speed*constants.motor_turns_per_m).with_feed_forward(wheel_accel_current))
-
         
     def find_module_vector(self, robot_vector, angular_rate):
         return robot_vector + self.turn_vector*angular_rate
@@ -61,13 +68,9 @@ class SwerveModule:
             accel_overshoot = wheel_accel_overshoot
         return accel_overshoot
     
-    def get_position_change(self):
-        self.angle = self.angle_encoder.get_absolute_position().value_as_double * cmath.tau
-        motor_position = self.drive_motor.get_position().value_as_double
-        motor_position_change = motor_position - self.motor_position_old
-        self.motor_position_old = motor_position
-        return cmath.rect(motor_position_change / constants.motor_turns_per_m, self.angle)
-    
+    def getPositionChange(self):
+        return self.position_change
+
     def reset_encoders(self):
         self.motor_position_old = 0
         self.drive_motor.set_position(0)
