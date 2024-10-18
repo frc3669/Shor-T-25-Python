@@ -1,12 +1,11 @@
-from subsystems.swerveModule import SwerveModule
-import constants
-import cmath
-from wpilib import Timer, SmartDashboard
+import cmath, commands2
+from wpilib import Timer, SmartDashboard, Joystick
 from phoenix6 import hardware
 from trajectory import Trajectory, Sample
-import mathFunctions
+from subsystems.swerveModule import SwerveModule
+import mathFunctions, constants
 
-class SwerveDrive:
+class SwerveDrive(commands2.Subsystem):
     def __init__(self):
         self.gyro = hardware.Pigeon2(1, "CTREdevices")
         self.auto_timer = Timer()
@@ -18,9 +17,29 @@ class SwerveDrive:
         self.heading = 0
         self.trajectory = None
         self.sample_index = 0
+        super().__init__()
 
-    def set_velocity(self, x_velocity: float, y_velocity: float, angular_velocity: float):
-        velocity = complex(x_velocity, y_velocity)
+    def periodic(self):
+        # This method will be called once per scheduler run
+        pass
+    
+    def simulationPeriodic(self):
+        # This method will be called once per scheduler run during simulation
+        pass
+
+    def driveTeleop(self, controller: Joystick):
+        velocity = 0
+        angular_velocity = 0
+        if controller.getName() == "Controller (Xbox One For Windows)":
+            velocity = complex(-controller.getRawAxis(1), -controller.getRawAxis(0))
+            angular_velocity = -controller.getRawAxis(4)
+        elif controller.getName() == "Radiomaster Boxer Joystick":
+            velocity = complex(controller.getRawAxis(0), controller.getRawAxis(1))
+            angular_velocity = controller.getRawAxis(2)
+
+        if controller.getRawButton(4):
+            self.gyro.set_yaw(0)
+        
         SmartDashboard.putNumber('velocity_x', velocity.real)
         SmartDashboard.putNumber('velocity_y', velocity.imag)
         # apply smooth deadband
