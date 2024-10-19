@@ -1,6 +1,8 @@
-import constants, mathFunctions
 import cmath, commands2
 from phoenix6 import hardware, controls, configs, StatusCode
+import constants
+from utils import mathFunctions
+from wpilib import SmartDashboard
 
 class SwerveModule(commands2.Subsystem):
     # create a swerve module at the given position relative to the center of the robot
@@ -29,13 +31,17 @@ class SwerveModule(commands2.Subsystem):
             self.turn_vector /= abs(self.turn_vector)
         self.motor_position_old = 0
         self.position_change = 0
+        self.module_velocity = 0
+        self.moduleID = moduleID
 
-    def periodic(self):
+    def odometryCalc(self):
         self.angle = self.angle_encoder.get_absolute_position().value_as_double * cmath.tau
+        SmartDashboard.putNumber("wheel_ang_" + str(self.moduleID), self.angle / cmath.tau)
         motor_position = self.drive_motor.get_position().value_as_double
         motor_position_change = motor_position - self.motor_position_old
         self.motor_position_old = motor_position
         self.position_change = cmath.rect(motor_position_change / constants.motor_turns_per_m, self.angle)
+        self.module_velocity = cmath.rect(self.drive_motor.get_velocity().value_as_double / constants.motor_turns_per_m, self.angle)
     
     def set_velocity(self, robot_velocity: complex = complex(), angular_velocity: float = 0, robot_accel: complex = complex(), angular_accel: float = 0):
         velocity = self.find_module_vector(robot_velocity, angular_velocity)
@@ -52,6 +58,8 @@ class SwerveModule(commands2.Subsystem):
         # use torque/velocity to set the drive motor velocity
         wheel_accel_current = mathFunctions.get_projection_magnitude(accel_current, cmath.rect(1, self.angle))
         self.drive_motor.set_control(self.velocity_ctrl.with_velocity(wheel_speed*constants.motor_turns_per_m).with_feed_forward(wheel_accel_current))
+        SmartDashboard.putNumber("wheel_vel_" + str(self.moduleID), self.drive_motor.get_velocity().value_as_double)
+        self.odometryCalc()
         
     def find_module_vector(self, robot_vector, angular_rate):
         return robot_vector + self.turn_vector*angular_rate
@@ -70,6 +78,11 @@ class SwerveModule(commands2.Subsystem):
     
     def getPositionChange(self):
         return self.position_change
+    
+    def getRotationContribution(self):
+        rot_contr = mathFunctions.get_projection_magnitude(self.module_velocity, self.turn_vector)
+        SmartDashboard.putNumber("rot_contr_" + str(self.moduleID), rot_contr)
+        return rot_contr
 
     def reset_encoders(self):
         self.motor_position_old = 0

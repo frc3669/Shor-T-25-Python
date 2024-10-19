@@ -7,8 +7,8 @@ def get_wrapped(x):
         x += cmath.tau
     return x
 
-# get the projection of a onto b
 def get_projection_magnitude(a, b):
+    """ get the projection of a onto b """
     # make b a unit vector
     if abs(b) != 0:
         b /= abs(b)
