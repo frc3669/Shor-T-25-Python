@@ -9,17 +9,19 @@ from pyfrc.physics.core import PhysicsInterface
 from phoenix6 import unmanaged
 
 from subsystems.swerve import Swerve
+import constants
 
-# import typing
+import typing
 
-# if typing.TYPE_CHECKING:
-from robot import Robot
+if typing.TYPE_CHECKING:
+    from robot import Robot
 
 
 class PhysicsEngine:
 
     def __init__(self, physics_controller: PhysicsInterface, robot: "Robot"):
         self.physics_controller = physics_controller
+        self.physics_controller.field.setRobotPose(Pose2d(constants.startingPosition.real, constants.startingPosition.imag, 0))
         self.motor_sims = [sim.DCMotorSim(DCMotor.krakenX60FOC(1), 1, 0.0001) for x in range(8)]
     
     def update_sim(self, now: float, tm_diff: float) -> None:

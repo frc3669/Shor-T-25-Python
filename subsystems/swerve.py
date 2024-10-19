@@ -12,7 +12,7 @@ class Swerve(commands2.Subsystem):
     modules = []
     slew_velocity = complex()
     slew_angular_velocity = 0
-    position = complex()
+    position = constants.startingPosition
     heading = 0
     trajectory = None
     sample_index = 0
@@ -119,7 +119,7 @@ class Swerve(commands2.Subsystem):
     def moveToNextSample():
         Swerve.heading = Swerve.gyro.get_yaw().value_as_double*cmath.tau/360
         # find the latest sample index
-        while Swerve.auto_timer.hasElapsed(Swerve.trajectory.get_sample(Swerve.sample_index).timestamp):
+        while Swerve.auto_timer.hasElapsed(Swerve.trajectory.get_sample(Swerve.sample_index).timestamp) and Swerve.sample_index < Swerve.trajectory.get_sample_count() - 1:
             Swerve.sample_index += 1
         if Swerve.sample_index < Swerve.trajectory.get_sample_count():
             Swerve.calculateOdometry()
@@ -132,7 +132,7 @@ class Swerve(commands2.Subsystem):
             angular_velocity = current_sample.angular_velocity + constants.swerve_heading_P * heading_error
             velocity *= cmath.rect(1, -Swerve.heading)
             for module in Swerve.modules:
-                module.set_velocity(velocity, angular_velocity)
+                module.set_velocity(velocity, angular_velocity, current_sample.acceleration, current_sample.angular_acceleration)
         else:
             for module in Swerve.modules:
                 module.set_velocity()
@@ -143,7 +143,7 @@ class Swerve(commands2.Subsystem):
             lambda: Swerve.setTrajectory(trajectory), 
             lambda: Swerve.moveToNextSample(),
             lambda x : Swerve.doNothing(),
-            lambda: Swerve.sample_index == Swerve.trajectory.get_sample_count(),
+            lambda: Swerve.sample_index == Swerve.trajectory.get_sample_count() - 1,
             Swerve)
     
     @staticmethod
