@@ -108,6 +108,19 @@ class Swerve(commands2.Subsystem):
             module.set_velocity(robot_slew_velocity, Swerve.slew_angular_velocity, robot_accel, angular_accel)
         SmartDashboard.putNumber('timestamp', Timer.getFPGATimestamp())
         Swerve.calculateOdometry()
+
+    @staticmethod
+    def testAccel(controller: Joystick, test_value):
+        acceleration = 0
+        dB = 0.8
+        if controller.getRawAxis(0) > dB:
+            acceleration = test_value
+        if controller.getRawAxis(0) < -dB:
+            acceleration = -test_value
+        SmartDashboard.putNumber('torque current setpoint', acceleration)
+        for module in Swerve.modules:
+            module.accelTest(acceleration)
+        SmartDashboard.putNumber('timestamp', Timer.getFPGATimestamp())
     
     @staticmethod
     def setTrajectory(trajectory: Trajectory):

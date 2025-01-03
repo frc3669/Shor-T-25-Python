@@ -12,6 +12,7 @@ class SwerveModule(commands2.Subsystem):
         self.steering_motor = hardware.TalonFX(20 + moduleID, "CTREdevices")
         self.angle_encoder = hardware.CANcoder(30 + moduleID, "CTREdevices")
         self.velocity_ctrl = controls.VelocityTorqueCurrentFOC(0)
+        self.torque_ctrl = controls.TorqueCurrentFOC(0)
         cfg = configs.TalonFXConfiguration()
         cfg.slot0.k_p = 5
         cfg.slot0.k_s = 3
@@ -60,6 +61,14 @@ class SwerveModule(commands2.Subsystem):
         self.drive_motor.set_control(self.velocity_ctrl.with_velocity(wheel_speed*constants.motor_turns_per_m).with_feed_forward(wheel_accel_current))
         SmartDashboard.putNumber("wheel_vel_" + str(self.moduleID), self.drive_motor.get_velocity().value_as_double)
         self.odometryCalc()
+
+    def accelTest(self, torque_current: float = 0):
+        self.angle = self.angle_encoder.get_absolute_position().value_as_double*cmath.tau
+        error = mathFunctions.get_wrapped(cmath.pi/2 - self.angle)
+        self.steering_motor.set_control(controls.DutyCycleOut(error/cmath.pi))
+        # use torque/velocity to set the drive motor velocity
+        self.drive_motor.set_control(controls.TorqueCurrentFOC(torque_current))
+        SmartDashboard.putNumber("wheel_vel_" + str(self.moduleID), self.drive_motor.get_velocity().value_as_double)
         
     def find_module_vector(self, robot_vector, angular_rate):
         return robot_vector + self.turn_vector*angular_rate
