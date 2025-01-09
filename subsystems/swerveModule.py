@@ -1,7 +1,7 @@
 import cmath, commands2
 from phoenix6 import hardware, controls, configs, StatusCode
 import constants
-from utils import mathFunctions
+from utils import mathFunctions as mf
 from wpilib import SmartDashboard
 
 class SwerveModule(commands2.Subsystem):
@@ -49,22 +49,22 @@ class SwerveModule(commands2.Subsystem):
         accel_current = self.find_module_vector(robot_accel, angular_accel)*constants.current_to_accel_ratio
         wheel_speed = abs(velocity)
         self.angle = self.angle_encoder.get_absolute_position().value_as_double*cmath.tau
-        error = mathFunctions.get_wrapped(cmath.phase(velocity) - self.angle)
+        error = mf.get_wrapped(cmath.phase(velocity) - self.angle)
         if wheel_speed < 0.008:
             error = 0
         if abs(error) > cmath.pi/2:
-            error = mathFunctions.get_wrapped(error + cmath.pi)
+            error = mf.get_wrapped(error + cmath.pi)
             wheel_speed *= -1
         self.steering_motor.set_control(controls.DutyCycleOut(error/cmath.pi))
         # use torque/velocity to set the drive motor velocity
-        wheel_accel_current = mathFunctions.get_projection_magnitude(accel_current, cmath.rect(1, self.angle))
+        wheel_accel_current = mf.get_projection_size(accel_current, cmath.rect(1, self.angle))
         self.drive_motor.set_control(self.velocity_ctrl.with_velocity(wheel_speed*constants.motor_turns_per_m).with_feed_forward(wheel_accel_current))
         SmartDashboard.putNumber("wheel_vel_" + str(self.moduleID), self.drive_motor.get_velocity().value_as_double)
         self.odometryCalc()
 
     def accelTest(self, torque_current: float = 0):
         self.angle = self.angle_encoder.get_absolute_position().value_as_double*cmath.tau
-        error = mathFunctions.get_wrapped(cmath.pi/2 - self.angle)
+        error = mf.get_wrapped(cmath.pi/2 - self.angle)
         self.steering_motor.set_control(controls.DutyCycleOut(error/cmath.pi))
         # use torque/velocity to set the drive motor velocity
         self.drive_motor.set_control(controls.TorqueCurrentFOC(torque_current))
@@ -79,7 +79,7 @@ class SwerveModule(commands2.Subsystem):
         accel_overshoot = 1
         if abs(vel_increment) > constants.max_m_per_sec_per_cycle:
             accel_overshoot = abs(vel_increment) / constants.max_m_per_sec_per_cycle
-        wheel_current = mathFunctions.get_projection_magnitude(vel_increment/constants.code_cycle_time*constants.current_to_accel_ratio, velocity) + constants.feedforward_current
+        wheel_current = mf.get_projection_size(vel_increment/constants.code_cycle_time*constants.current_to_accel_ratio, velocity) + constants.feedforward_current
         wheel_accel_overshoot = abs(wheel_current) / (constants.max_current-constants.current_headroom)
         if wheel_accel_overshoot > accel_overshoot:
             accel_overshoot = wheel_accel_overshoot
@@ -89,7 +89,7 @@ class SwerveModule(commands2.Subsystem):
         return self.position_change
     
     def getRotationContribution(self):
-        rot_contr = mathFunctions.get_projection_magnitude(self.module_velocity, self.turn_vector)
+        rot_contr = mf.get_projection_size(self.module_velocity, self.turn_vector)
         SmartDashboard.putNumber("rot_contr_" + str(self.moduleID), rot_contr)
         return rot_contr
 

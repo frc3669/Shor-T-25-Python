@@ -22,7 +22,7 @@ class PhysicsEngine:
     def __init__(self, physics_controller: PhysicsInterface, robot: "Robot"):
         self.physics_controller = physics_controller
         self.physics_controller.field.setRobotPose(Pose2d(constants.startingPosition.real, constants.startingPosition.imag, 0))
-        self.motor_sims = [sim.DCMotorSim(DCMotor.krakenX60FOC(1), 1, 0.0001) for x in range(8)]
+        self.motor_sims = [sim.DCMotorSim(DCMotor.krakenX60FOC(1), 1, 0.0001) for x in range(len(Swerve.modules)*2)]
     
     def update_sim(self, now: float, tm_diff: float) -> None:
         """

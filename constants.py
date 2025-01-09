@@ -12,6 +12,11 @@ wheel_diameter_m = 0.09906
 motor_turns_per_m = motor_turns_per_wheel_turn / (wheel_diameter_m*math.pi)
 max_m_per_sec = 5
 
+max_input_current = 40
+braking_current = 15
+max_forward_current = max_input_current - braking_current
+max_reverse_current = max_input_current + braking_current
+
 startingPosition = 0.5 + 4j
 swerve_position_P = 0.04
 swerve_heading_P = 2.5

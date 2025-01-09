@@ -1,8 +1,8 @@
 import cmath, commands2
-from wpilib import Timer, SmartDashboard, Joystick
+from wpilib import Timer, SmartDashboard, Joystick, DataLogManager
 from phoenix6 import hardware
 from utils.trajectory import Trajectory
-from subsystems.swerveModule import SwerveModule, constants, mathFunctions
+from subsystems.swerveModule import SwerveModule, constants, mf
 from typing import final
 
 @final
@@ -38,9 +38,6 @@ class Swerve(commands2.Subsystem):
 
         if controller.getRawButton(4):
             Swerve.gyro.set_yaw(0)
-        
-        SmartDashboard.putNumber('velocity_x', velocity.real)
-        SmartDashboard.putNumber('velocity_y', velocity.imag)
         # apply smooth deadband
         dB = 0.03
         if abs(velocity) > dB:
@@ -102,8 +99,6 @@ class Swerve(commands2.Subsystem):
         robot_accel = robot_velocity_error*2
         angular_accel = angular_velocity_error*2
         # drive the modules
-        SmartDashboard.putNumber('Swerve.slew_velocity_x', robot_slew_velocity.real)
-        SmartDashboard.putNumber('Swerve.slew_velocity_y', robot_slew_velocity.imag)
         for module in Swerve.modules:
             module.set_velocity(robot_slew_velocity, Swerve.slew_angular_velocity, robot_accel, angular_accel)
         SmartDashboard.putNumber('timestamp', Timer.getFPGATimestamp())
@@ -140,7 +135,7 @@ class Swerve(commands2.Subsystem):
             # calculate the proportional response
             position_error = current_sample.position - Swerve.position
             heading_error = current_sample.heading - Swerve.heading
-            heading_error = mathFunctions.get_wrapped(heading_error)
+            heading_error = mf.get_wrapped(heading_error)
             velocity = current_sample.velocity + constants.swerve_position_P * position_error
             angular_velocity = current_sample.angular_velocity + constants.swerve_heading_P * heading_error
             velocity *= cmath.rect(1, -Swerve.heading)
@@ -185,7 +180,6 @@ class Swerve(commands2.Subsystem):
         angularRate = 0
         for module in Swerve.modules:
             angularRate += module.getRotationContribution()
-        SmartDashboard.putNumber('rotation_rate', angularRate/4)
         return angularRate / 4
     
     def doNothing():
