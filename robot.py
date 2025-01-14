@@ -1,5 +1,4 @@
 import wpilib, commands2
-import rev
 from wpilib import DataLogManager
 from subsystems.swerve import Swerve, SwerveModule, Trajectory
 
@@ -10,9 +9,6 @@ class Robot(commands2.TimedCommandRobot):
         Swerve.add_module(SwerveModule(3, -1, -1))
         Swerve.add_module(SwerveModule(4, 1, -1))
         self.controller = wpilib.Joystick(0)
-        self.motor = rev.CANSparkMax(51,rev.CANSparkLowLevel.MotorType.kBrushless)
-        self.pidController = self.motor.getPIDController()
-        self.pidController.setP(0.1)
 
 
     
@@ -20,9 +16,7 @@ class Robot(commands2.TimedCommandRobot):
         DataLogManager.start()
 
     def teleopPeriodic(self):
-        # Swerve.driveTeleop(self.controller)
-        position = -self.controller.getRawAxis(5)
-        self.pidController.setReference(position+1,rev.CANSparkLowLevel.ControlType.kPosition)
+        Swerve.driveTeleop(self.controller)
 
 
     
